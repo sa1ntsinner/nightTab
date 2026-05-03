@@ -264,7 +264,7 @@ export const Date = function () {
 
   this.update = () => {
 
-    this.now = new Date();
+    this.now = new globalThis.Date();
 
     // Only re-assemble when the visible date-config slice changes.
     // On a normal tick the key matches and the DOM teardown is skipped.
