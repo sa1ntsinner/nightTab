@@ -46,20 +46,17 @@ xcrun safari-web-extension-converter dist/web \
   --project-location ./SafariApp \
   --macos-only --no-prompt --copy-resources
 
-# 3. Build and ad-hoc sign the macOS app
-# (CODE_SIGN_STYLE=Manual + IDENTITY="-" = ad-hoc "Sign to Run Locally";
-#  entitlements are embedded by Xcode — do NOT use CODE_SIGNING_ALLOWED=NO)
+# 3. Build and sign the macOS app
+# Requires your Apple ID to be added in Xcode → Settings → Accounts.
+# Replace YOUR_TEAM_ID with the 10-character Team ID shown in Xcode
+# (Settings → Accounts → your name → Team ID).
 xcodebuild \
   -project SafariApp/nightTab/nightTab.xcodeproj \
   -scheme nightTab -configuration Release \
   -arch arm64 \
   -derivedDataPath build \
-  CODE_SIGN_IDENTITY="-" \
-  CODE_SIGN_STYLE=Manual \
-  DEVELOPMENT_TEAM="" \
-  CODE_SIGNING_REQUIRED=YES \
-  CODE_SIGNING_ALLOWED=YES \
-  ENABLE_HARDENED_RUNTIME=NO
+  CODE_SIGN_STYLE=Automatic \
+  DEVELOPMENT_TEAM=YOUR_TEAM_ID
 
 # 5. Package into a DMG (requires: brew install create-dmg)
 create-dmg \
