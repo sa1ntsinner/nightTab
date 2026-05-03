@@ -23,8 +23,10 @@ This repository is a Safari/macOS port of [nightTab by @zombieFox](https://githu
 3. **First-launch Gatekeeper bypass** — because the build is ad-hoc signed (no Apple Developer ID), macOS will block the first open:
    - Right-click `nightTab.app` → **Open** → click **Open** in the dialog.
    - Alternatively, run once in Terminal: `xattr -dr com.apple.quarantine /Applications/nightTab.app`
-4. Open **Safari → Settings → Extensions**, find nightTab and enable it. Click **Always Allow on Every Website** when prompted.
-5. Open a new tab — nightTab will appear as your start page.
+4. **Open nightTab.app** — this step is required. Safari Web Extensions only register with Safari after their host app has been launched at least once. The app shows a simple window; you can keep it in the background or quit it after this first run.
+5. **Quit and reopen Safari**, then go to **Settings → Extensions**. nightTab will now appear in the list — enable it.
+6. Click **Always Allow on Every Website** when prompted.
+7. Open a new tab — nightTab will appear as your start page.
 
 > **Note:** existing nightTab settings stored by a previous build will not carry over (the bundle ID changed). Export your data first via the nightTab menu before updating.
 
@@ -44,17 +46,20 @@ xcrun safari-web-extension-converter dist/web \
   --project-location ./SafariApp \
   --macos-only --no-prompt --copy-resources
 
-# 3. Build the macOS app
+# 3. Build and ad-hoc sign the macOS app
+# (CODE_SIGN_STYLE=Manual + IDENTITY="-" = ad-hoc "Sign to Run Locally";
+#  entitlements are embedded by Xcode — do NOT use CODE_SIGNING_ALLOWED=NO)
 xcodebuild \
   -project SafariApp/nightTab/nightTab.xcodeproj \
   -scheme nightTab -configuration Release \
   -arch arm64 \
   -derivedDataPath build \
-  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-
-# 4. Ad-hoc sign
-APP="build/Build/Products/Release/nightTab.app"
-codesign --force --deep --sign - "$APP"
+  CODE_SIGN_IDENTITY="-" \
+  CODE_SIGN_STYLE=Manual \
+  DEVELOPMENT_TEAM="" \
+  CODE_SIGNING_REQUIRED=YES \
+  CODE_SIGNING_ALLOWED=YES \
+  ENABLE_HARDENED_RUNTIME=NO
 
 # 5. Package into a DMG (requires: brew install create-dmg)
 create-dmg \
