@@ -10,6 +10,71 @@ A neutral new tab page accented with a chosen colour. Customise the layout, styl
 |:-------------:|
 | [![Safari](asset/logo/safari-48.png)](https://github.com/samrth012/nightTab/releases/latest)
 
+---
+
+## macOS / Safari
+
+This repository is a Safari/macOS port of [nightTab by @zombieFox](https://github.com/zombieFox/nightTab), originally ported by [@samrth012](https://github.com/samrth012/nightTab). This build includes Phase A performance optimisations contributed by [@sa1ntsinner](https://github.com/sa1ntsinner).
+
+### Install on macOS
+
+1. Download **`nightTab-7.6.0-safari.dmg`** from the [Releases page](https://github.com/samrth012/nightTab/releases/latest).
+2. Open the DMG and drag **nightTab.app** into your **Applications** folder.
+3. **First-launch Gatekeeper bypass** — because the build is ad-hoc signed (no Apple Developer ID), macOS will block the first open:
+   - Right-click `nightTab.app` → **Open** → click **Open** in the dialog.
+   - Alternatively, run once in Terminal: `xattr -dr com.apple.quarantine /Applications/nightTab.app`
+4. Open **Safari → Settings → Extensions**, find nightTab and enable it. Click **Always Allow on Every Website** when prompted.
+5. Open a new tab — nightTab will appear as your start page.
+
+> **Note:** existing nightTab settings stored by a previous build will not carry over (the bundle ID changed). Export your data first via the nightTab menu before updating.
+
+### Building locally (macOS)
+
+Requirements: Node.js ≥18, npm, Xcode (full app, not just Command Line Tools), Homebrew.
+
+```bash
+# 1. Install dependencies and build the web bundle
+npm install
+npm run build
+
+# 2. Convert to a Safari Web Extension Xcode project
+xcrun safari-web-extension-converter dist/web \
+  --app-name "nightTab" \
+  --bundle-identifier "com.sa1ntsinner.nightTab" \
+  --project-location ./SafariApp \
+  --macos-only --no-prompt --copy-resources
+
+# 3. Build the macOS app
+xcodebuild \
+  -project SafariApp/nightTab/nightTab.xcodeproj \
+  -scheme nightTab -configuration Release \
+  -arch arm64 \
+  -derivedDataPath build \
+  CODE_SIGN_IDENTITY="-" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+
+# 4. Ad-hoc sign
+APP="build/Build/Products/Release/nightTab.app"
+codesign --force --deep --sign - "$APP"
+
+# 5. Package into a DMG (requires: brew install create-dmg)
+create-dmg \
+  --volname "nightTab" \
+  --window-size 540 380 \
+  --icon-size 96 \
+  --icon "nightTab.app" 140 180 \
+  --app-drop-link 400 180 \
+  --no-internet-enable \
+  "nightTab-7.6.0-safari.dmg" "$APP"
+```
+
+### Attribution
+
+- **Original nightTab** — [zombieFox/nightTab](https://github.com/zombieFox/nightTab) by [@zombieFox](https://github.com/zombieFox). Licensed under GPL-3.0.
+- **Safari port** — [samrth012/nightTab](https://github.com/samrth012/nightTab) by [@samrth012](https://github.com/samrth012).
+- **Phase A performance optimisations** — contributed by [@sa1ntsinner](https://github.com/sa1ntsinner): dropped moment.js (~−250 KB), clock/date DOM caching, shared visibility-aware ticker, debounced `localStorage` writes, cross-browser API shim, WOFF2-only fonts.
+
+---
+
 # Support
 
 - [Project goals](https://github.com/zombieFox/nightTab/wiki/Project-goals)
@@ -38,6 +103,8 @@ To build the project use:
 
 A web ready folder will be created in `/dist/web/`.
 A browser addon/extension ready zip will be created in `/dist/extension/`.
+
+For the macOS/Safari build, see the [Building locally](#building-locally-macos) section above.
 
 # Screenshots
 
