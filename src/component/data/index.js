@@ -104,7 +104,10 @@ data.import = {
 
           data.restore(dataToRestore);
 
-          data.save();
+          // Single-shot import: force the write to disk before the reload
+          // tears the page down, so the trailing-edge of the debounce can't
+          // be lost on slow systems.
+          data.save.flush();
 
           data.reload.render();
         }
@@ -293,7 +296,9 @@ data.restore = (dataToRestore) => {
 // per-event saves were a measurable hot path during settings spam.
 //
 // Strategy: leading-edge save (so the first action persists immediately),
-// then a 500 ms trailing flush that catches any further calls in the window.
+// then a 250 ms trailing flush that catches any further calls in the window.
+// 250 ms still coalesces slider/colour-picker spam (UI events are <=60 Hz)
+// while keeping the at-risk window short for Safari Cmd+Q quits.
 // `data.save.flush()` forces an immediate write — call it from import/export
 // paths and any spot that needs the on-disk state before yielding control.
 const _doSave = () => {
@@ -317,7 +322,7 @@ data.save = () => {
         _savePending = false;
         _doSave();
       }
-    }, 500);
+    }, 250);
   } else {
     _savePending = true;
   }
@@ -332,10 +337,27 @@ data.save.flush = () => {
   _doSave();
 };
 
+// Page-lifecycle flush hooks. Safari is well known to skip `beforeunload`
+// when the app quits (Cmd+Q) — the kill is too fast and modern WebKit
+// deprioritises the event for extension new-tab pages. We listen to all
+// three events so at least one fires before the page is torn down, with
+// a `_flushIfPending` guard so each Cmd+Q triggers at most one `_doSave`.
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+  const _flushIfPending = () => {
     if (_saveTimer !== null || _savePending) data.save.flush();
-  });
+  };
+  // pagehide: Safari's preferred event for tab/window close.
+  window.addEventListener('pagehide', _flushIfPending);
+  // visibilitychange -> hidden: WebKit's "save now, you may not get
+  // another tick"; fires before pagehide on quit/hide.
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') _flushIfPending();
+    });
+  }
+  // beforeunload: kept for the cross-browser build (same dist/web/ ships
+  // as the Chrome/Firefox extension).
+  window.addEventListener('beforeunload', _flushIfPending);
 }
 
 data.load = () => {

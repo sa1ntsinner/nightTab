@@ -6,74 +6,22 @@ A neutral new tab page accented with a chosen colour. Customise the layout, styl
 |:-------------:|:-------------:|:-------------:|:-------------:|:-------------:|
 | [<img src="./src/icon/icon-48.png" width="48px" height="48px">](https://zombiefox.github.io/nightTab/) | [![Chrome](asset/logo/chrome-48.png)](https://chrome.google.com/webstore/detail/nighttab/hdpcadigjkbcpnlcpbcohpafiaefanki) | [![Firefox](asset/logo/firefox-48.png)](https://addons.mozilla.org/en-GB/firefox/addon/nighttab/) | [![coffee](asset/logo/bymeacoffee-48.png)](https://www.buymeacoffee.com/zombieFox/) | [![Reddit](asset/logo/reddit-48.png)](https://www.reddit.com/r/nighttab/) |
 
-| [Install nightTab Extension](https://github.com/samrth012/nightTab/releases/latest) |
+| [Install nightTab for Safari](https://github.com/sa1ntsinner/nightTab/releases/latest) |
 |:-------------:|
-| [![Safari](asset/logo/safari-48.png)](https://github.com/samrth012/nightTab/releases/latest)
+| [![Safari](asset/logo/safari-48.png)](https://github.com/sa1ntsinner/nightTab/releases/latest)
 
 ---
 
 ## macOS / Safari
 
-This repository is a Safari/macOS port of [nightTab by @zombieFox](https://github.com/zombieFox/nightTab), originally ported by [@samrth012](https://github.com/samrth012/nightTab). This build includes Phase A performance optimisations contributed by [@sa1ntsinner](https://github.com/sa1ntsinner).
+This is a performance-improved build of [samrth012's Safari port](https://github.com/samrth012/nightTab) of [nightTab by zombieFox](https://github.com/zombieFox/nightTab). The changes compared to samrth012's build are small and low-risk:
 
-### Install on macOS
-
-1. Download **`nightTab-7.6.0-safari.dmg`** from the [Releases page](https://github.com/samrth012/nightTab/releases/latest).
-2. Open the DMG and drag **nightTab.app** into your **Applications** folder.
-3. **First-launch Gatekeeper bypass** — because the build is ad-hoc signed (no Apple Developer ID), macOS will block the first open:
-   - Right-click `nightTab.app` → **Open** → click **Open** in the dialog.
-   - Alternatively, run once in Terminal: `xattr -dr com.apple.quarantine /Applications/nightTab.app`
-4. **Open nightTab.app** — this step is required. Safari Web Extensions only register with Safari after their host app has been launched at least once. The app shows a simple window; you can keep it in the background or quit it after this first run.
-5. **Quit and reopen Safari**, then go to **Settings → Extensions**. nightTab will now appear in the list — enable it.
-6. Click **Always Allow on Every Website** when prompted.
-7. Open a new tab — nightTab will appear as your start page.
-
-> **Note:** existing nightTab settings stored by a previous build will not carry over (the bundle ID changed). Export your data first via the nightTab menu before updating.
-
-### Building locally (macOS)
-
-Requirements: Node.js ≥18, npm, Xcode (full app, not just Command Line Tools), Homebrew.
-
-```bash
-# 1. Install dependencies and build the web bundle
-npm install
-npm run build
-
-# 2. Convert to a Safari Web Extension Xcode project
-xcrun safari-web-extension-converter dist/web \
-  --app-name "nightTab" \
-  --bundle-identifier "com.sa1ntsinner.nightTab" \
-  --project-location ./SafariApp \
-  --macos-only --no-prompt --copy-resources
-
-# 3. Build and sign the macOS app
-# Requires your Apple ID to be added in Xcode → Settings → Accounts.
-# Replace YOUR_TEAM_ID with the 10-character Team ID shown in Xcode
-# (Settings → Accounts → your name → Team ID).
-xcodebuild \
-  -project SafariApp/nightTab/nightTab.xcodeproj \
-  -scheme nightTab -configuration Release \
-  -arch arm64 \
-  -derivedDataPath build \
-  CODE_SIGN_STYLE=Automatic \
-  DEVELOPMENT_TEAM=YOUR_TEAM_ID
-
-# 5. Package into a DMG (requires: brew install create-dmg)
-create-dmg \
-  --volname "nightTab" \
-  --window-size 540 380 \
-  --icon-size 96 \
-  --icon "nightTab.app" 140 180 \
-  --app-drop-link 400 180 \
-  --no-internet-enable \
-  "nightTab-7.6.0-safari.dmg" "$APP"
-```
-
-### Attribution
-
-- **Original nightTab** — [zombieFox/nightTab](https://github.com/zombieFox/nightTab) by [@zombieFox](https://github.com/zombieFox). Licensed under GPL-3.0.
-- **Safari port** — [samrth012/nightTab](https://github.com/samrth012/nightTab) by [@samrth012](https://github.com/samrth012).
-- **Phase A performance optimisations** — contributed by [@sa1ntsinner](https://github.com/sa1ntsinner): dropped moment.js (~−250 KB), clock/date DOM caching, shared visibility-aware ticker, debounced `localStorage` writes, cross-browser API shim, WOFF2-only fonts.
+- **Dropped moment.js** — replaced with native `Date` and `Intl.DateTimeFormat` (~−250 KB from the bundle)
+- **Clock and date no longer rebuild the DOM every second** — only rebuild when the display settings actually change
+- **Single shared timer** — one interval drives both clock and date, pauses when the tab is hidden
+- **Debounced settings saves** — `localStorage` writes are throttled to ~500 ms instead of every keypress
+- **Cross-browser API shim** — uses `browser.tabs` when available, falls back to `chrome.tabs`
+- **WOFF2-only fonts** — dropped redundant TTF and WOFF files (~−680 KB from the bundle)
 
 ---
 
